@@ -34,7 +34,11 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
- 
+    FlightSuretyData flightSuretyData;
+    uint8 private constant MIN_REGISTERED_AIRLINES = 4;
+    uint256 public constant MAX_INSURANCE_PRICE = 1 ether;
+    uint256 public constant MINIMUM_FUNDS = 10 ether;
+
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -50,7 +54,7 @@ contract FlightSuretyApp {
     modifier requireIsOperational() 
     {
          // Modify to call data contract's status
-        require(true, "Contract is currently not operational");  
+        require(flightSuretyData.isOperational(), "Contract is currently not operational");  
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -73,10 +77,12 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address dataContract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(dataContract);
     }
 
     /********************************************************************************************/
@@ -85,11 +91,13 @@ contract FlightSuretyApp {
 
     function isOperational() 
                             public 
-                            pure 
+                            view 
                             returns(bool) 
     {
-        return true;  // Modify to call data contract's status
+        return flightSuretyData.isOperational();  // Modify to call data contract's status
     }
+
+
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
@@ -101,13 +109,14 @@ contract FlightSuretyApp {
     *
     */   
     function registerAirline
-                            (   
+                            (   address newAirlineAddress
                             )
                             external
-                            pure
+                            requireIsOperational
                             returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        
+
     }
 
 
@@ -121,7 +130,7 @@ contract FlightSuretyApp {
                                 external
                                 pure
     {
-
+        
     }
     
    /**
@@ -142,6 +151,7 @@ contract FlightSuretyApp {
 
 
     // Generate a request for oracles to fetch flight information
+    // Intended to be triggered from the UI
     function fetchFlightStatus
                         (
                             address airline,
@@ -186,7 +196,7 @@ contract FlightSuretyApp {
     // Model for responses from oracles
     struct ResponseInfo {
         address requester;                              // Account that requested status
-        bool isOpen;                                    // If open, oracle responses are accepted
+        bool isOpen;                                    // If open, oracle responses are accepted. Once threshold reached, switch to false.
         mapping(uint8 => address[]) responses;          // Mapping key is the status code reported
                                                         // This lets us group responses and identify
                                                         // the response that majority of the oracles
@@ -335,3 +345,8 @@ contract FlightSuretyApp {
 // endregion
 
 }   
+
+contract FlightSuretyData {
+    function isOperational() public view returns(bool);
+
+}

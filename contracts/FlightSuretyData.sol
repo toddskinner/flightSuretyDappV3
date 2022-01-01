@@ -12,6 +12,20 @@ contract FlightSuretyData {
     address private contractOwner;                                      // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
+    mapping(address => uint256) private authorizedContracts;
+
+    struct Airline {
+        address airlineAddress;
+        string airlineName;
+        bool isRegistered;
+        bool isFunded;
+        uint256 fundingAmount;
+        uint256 numVotes;
+    }
+    mapping(address => Airline) private airlines;
+    uint256 public airlinesCount;
+    
+
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
@@ -27,6 +41,7 @@ contract FlightSuretyData {
                                 public 
     {
         contractOwner = msg.sender;
+        airlinesCount = 0;
     }
 
     /********************************************************************************************/
@@ -56,6 +71,15 @@ contract FlightSuretyData {
         _;
     }
 
+    /**
+    * @dev Modifier that requires the function caller to be authorized. Use on any function that is expected to have an outside caller. 
+    */
+    modifier isCallerAuthorized()
+    {
+        require(authorizedContracts[msg.sender] == 1, "Caller is not authorized");
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -71,6 +95,22 @@ contract FlightSuretyData {
                             returns(bool) 
     {
         return operational;
+    }
+
+    function isRegistered() 
+                            public 
+                            view 
+                            returns(bool) 
+    {
+        return true;
+    }
+
+    function isFunded() 
+                            public 
+                            view 
+                            returns(bool) 
+    {
+        return true;
     }
 
 
@@ -89,6 +129,14 @@ contract FlightSuretyData {
         operational = mode;
     }
 
+    function authorizeContract(address dataContract) external requireContractOwner {
+        authorizedContracts[dataContract] = 1;
+    }
+
+    function deauthorizeContract(address dataContract) external requireContractOwner {
+        delete authorizedContracts[dataContract];
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -100,10 +148,26 @@ contract FlightSuretyData {
     */   
     function registerAirline
                             (   
+                                address airlineAddress
                             )
                             external
-                            pure
+                            requireIsOperational
+                            isCallerAuthorized
+                            returns (bool)
     {
+        require(airlineAddress != address(0), "'airlineAddress' must be a valid address.");
+        require(!airlines[airlineAddress].isRegistered, "Airline is already registered.");
+        
+        return true;
+
+        // airlines[airlineAddress] = Airline({
+        //                                         airlineWallet: airlineAddress,
+        //                                         isRegistered: true,
+        //                                         name: name,
+        //                                         funded: 0,
+        //                                         votes: 1
+        //                                 });
+        // airlinesCount++;
     }
 
 
@@ -181,6 +245,14 @@ contract FlightSuretyData {
         fund();
     }
 
+    /**
+    * @dev check if airline is registered
+    *      Can only be called from FlightSuretyApp contract
+    *
+    */   
+    function checkAirlineRegistered(address checkAirline) external view requireIsOperational  returns(bool) {
+        return airlines[checkAirline].isRegistered;
+    }
 
 }
 

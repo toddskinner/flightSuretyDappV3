@@ -84,7 +84,17 @@ contract FlightSuretyData {
                                 public 
     {
         contractOwner = msg.sender;
-        numRegisteredAirlines = 0;
+        authorizedContracts[msg.sender] = 1;
+
+        airlines[msg.sender].airlineAddress = msg.sender;
+        airlines[msg.sender].airlineName = "Initial Air";    
+        airlines[msg.sender].isQueued = false;
+        airlines[msg.sender].isRegistered = true;
+        airlines[msg.sender].isFunded = false;
+        airlines[msg.sender].fundingAmount = 0;
+        airlines[msg.sender].numVotes = 0;
+
+        numRegisteredAirlines = 1;
     }
 
     /********************************************************************************************/

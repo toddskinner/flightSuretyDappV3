@@ -57,6 +57,13 @@ contract FlightSuretyApp {
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
+    modifier requireSenderIsFunded() 
+    {
+         // Modify to call sender trying to register an airline is an already funded airline
+        require(flightSuretyData.isFunded(msg.sender), "Msg sender is currently not a funded airline");  
+        _;  // All modifiers require an "_" which indicates where the function body will be added
+    }
+
     modifier requireAirlineIsRegistered(address airlineAddress) 
     {
          // Modify to call sender trying to register an airline is an already registered airline
@@ -123,11 +130,12 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address datacontract
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(msg.sender);
+        flightSuretyData = FlightSuretyData(datacontract);
     }
 
     /********************************************************************************************/
@@ -175,6 +183,15 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */   
+    // function registerAirline
+    //                         (   address newAirlineAddress,
+    //                             string airlineName
+    //                         )
+    //                         external
+    // {       
+    //     flightSuretyData.registerAirline(newAirlineAddress, airlineName, true);
+    // }
+
     function registerAirline
                             (   address newAirlineAddress,
                                 string airlineName
@@ -182,6 +199,7 @@ contract FlightSuretyApp {
                             external
                             requireIsOperational
                             requireSenderIsRegistered
+                            requireSenderIsFunded
                             requireAirlineIsNotRegistered(newAirlineAddress)
                             returns(bool success)
     {
@@ -502,7 +520,7 @@ contract FlightSuretyData {
 
     function getRegisteredAirlineCount() public view returns(uint256);
     
-    function registerAirline(address airlineAddress, string airlineName, bool isRegisteredBool) external returns (bool);
+    function registerAirline(address airlineAddress, string airlineName, bool isRegisteredBool) external;
 
     function getNumAirlineVotes(address airlineAddress) public view returns(uint256);
 

@@ -7,7 +7,7 @@ module.exports = function(deployer) {
     let firstAirline = '0xf17f52151EbEF6C7334FAD080c5704D77216b732';
     deployer.deploy(FlightSuretyData)
     .then(() => {
-        return deployer.deploy(FlightSuretyApp)
+        return deployer.deploy(FlightSuretyApp, FlightSuretyData.address)    //https://ethereum.stackexchange.com/questions/89787/trying-to-run-a-truffle-test-after-successful-compile-i-have-this-error-invalid
                 .then(() => {
                     let config = {
                         localhost: {

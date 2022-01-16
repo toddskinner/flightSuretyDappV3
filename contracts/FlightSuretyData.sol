@@ -16,7 +16,7 @@ contract FlightSuretyData {
 
     mapping(address => uint256) private authorizedContracts;
 
-    // Flight status codees
+    // Flight status codes
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
     uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
@@ -248,11 +248,11 @@ contract FlightSuretyData {
         operational = mode;
     }
 
-    function authorizeContract(address dataContract) external requireContractOwner {
+    function authorizeCaller(address dataContract) external requireContractOwner {
         authorizedContracts[dataContract] = 1;
     }
 
-    function deauthorizeContract(address dataContract) external requireContractOwner {
+    function deauthorizeCaller(address dataContract) external requireContractOwner {
         delete authorizedContracts[dataContract];
     }
 
@@ -265,6 +265,33 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */   
+    // function registerAirline
+    //                         (   
+    //                             address airlineAddress,
+    //                             string airlineName,
+    //                             bool isRegisteredBool
+    //                         )
+    //                         external
+    // {
+
+    //     // require(!airlines[airlineAddress].isRegistered, "Airline is already registered.");
+        
+    //     airlines[airlineAddress] = Airline({
+    //                                             airlineAddress: airlineAddress,
+    //                                             airlineName: airlineName, 
+    //                                             isQueued: true,
+    //                                             isRegistered: true,
+    //                                             isFunded: false,
+    //                                             fundingAmount: 0,
+    //                                             numVotes: 1
+    //                                     });
+        
+    //     if(isRegisteredBool){
+    //         numRegisteredAirlines++;
+    //     }
+    // }
+
+
     function registerAirline
                             (   
                                 address airlineAddress,
@@ -277,7 +304,7 @@ contract FlightSuretyData {
                             returns (bool)
     {
 
-        // require(!airlines[airlineAddress].isRegistered, "Airline is already registered.");
+        require(!airlines[airlineAddress].isRegistered, "Airline is already registered.");
         
         airlines[airlineAddress] = Airline({
                                                 airlineAddress: airlineAddress,
@@ -293,6 +320,7 @@ contract FlightSuretyData {
             numRegisteredAirlines++;
         }
     }
+
 
     /**
     * @dev Register a future flight for insuring.

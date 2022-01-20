@@ -136,11 +136,11 @@ contract FlightSuretyData {
 
     
 
-    modifier requireFlightIsNotRegistered(bytes32 flightKey)
-    {
-        require(flights[flightKey].isRegistered == false, "Flight is already registered");
-        _;
-    }
+    // modifier requireFlightIsNotRegistered(bytes32 flightKey)
+    // {
+    //     require(flights[flightKey].isRegistered == false, "Flight is already registered");
+    //     _;
+    // }
 
     modifier requirePositiveValue()
     {
@@ -348,13 +348,15 @@ contract FlightSuretyData {
                                 (
                                     address airlineAddress,
                                     string flightNum,
-                                    uint256 departureTime
+                                    uint256 departureTime,
+                                    bytes32 flightKey
                                 )
                                 requireIsOperational
                                 external
     {
-        bytes32 flightKey = getFlightKey(airlineAddress, flightNum, departureTime);
 
+        require(flights[flightKey].isRegistered == false, "Flight is already registered");
+        
         // flights[getFlightKey(airlineAddress, flightNum, departureTime)] = Flight({
         //                                         flightNumber: flightNum,
         //                                         isRegistered: true, 

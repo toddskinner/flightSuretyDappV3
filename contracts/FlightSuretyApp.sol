@@ -267,11 +267,13 @@ contract FlightSuretyApp {
                                 )
                                 external
                                 requireIsOperational
-                                // requireSenderIsRegistered     // airline is msg.sender
-                                // requireSenderIsFunded
+                                requireSenderIsRegistered     // airline is msg.sender
+                                requireSenderIsFunded
                                 // requireFlightIsNotRegistered(flightNumber, departureTime)
     {
-        flightSuretyData.registerFlight(msg.sender, flightNumber, departureTime);
+        bytes32 flightKey = getFlightKey(msg.sender, flightNumber, departureTime);
+
+        flightSuretyData.registerFlight(msg.sender, flightNumber, departureTime, flightKey);
     }
 
    /**
@@ -555,7 +557,7 @@ contract FlightSuretyData {
 
     function getFlightRegistrationStatus(bytes32 flightKey) public view returns(bool);
    
-    function registerFlight(address airline, string flightNumber, uint256 timestamp) external;
+    function registerFlight(address airline, string flightNumber, uint256 timestamp, bytes32 flightKey) external;
 
     function processFlightStatus(address airline, string flightNumber, uint256 timestamp, uint8 updatedStatusCode) external;
 

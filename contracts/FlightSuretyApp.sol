@@ -219,7 +219,7 @@ contract FlightSuretyApp {
 
                 if(!flightSuretyData.getVotingStatus(newAirlineAddress, msg.sender)){
                     numAirlineVotes++;
-                    flightSuretyData.voteForAirlineRegistration(newAirlineAddress, msg.sender, numAirlineVotes);
+                    this.voteForAirlineRegistration(newAirlineAddress, numAirlineVotes);
                 }
 
                 if(numAirlineVotes >= registeredAirlineCount.div(2) ){
@@ -232,8 +232,26 @@ contract FlightSuretyApp {
             } else {
 
                 flightSuretyData.registerAirline(newAirlineAddress, airlineName, false);
-
+                return false;
             }
+        }
+    }
+
+    function voteForAirlineRegistration(address airlineAddress, uint256 updatedNumVotes) 
+                            external
+                            requireIsOperational
+                            requireSenderIsRegistered
+                            returns(bool)
+    {
+        flightSuretyData.voteForAirlineRegistration(airlineAddress, updatedNumVotes);
+
+        uint256 registeredAirlineCount = flightSuretyData.getRegisteredAirlineCount();
+        
+        if(updatedNumVotes >= registeredAirlineCount.div(2)){
+            flightSuretyData.registerQueuedAirline(airlineAddress);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -249,8 +267,9 @@ contract FlightSuretyApp {
                                 )
                                 external
                                 requireIsOperational
-                                requireSenderIsRegistered     // airline is msg.sender
-                                requireFlightIsNotRegistered(flightNumber, departureTime)
+                                // requireSenderIsRegistered     // airline is msg.sender
+                                // requireSenderIsFunded
+                                // requireFlightIsNotRegistered(flightNumber, departureTime)
     {
         flightSuretyData.registerFlight(msg.sender, flightNumber, departureTime);
     }
@@ -528,7 +547,7 @@ contract FlightSuretyData {
 
     function isAlreadyQueued(address airlineAddress) public view returns(bool);
 
-    function voteForAirlineRegistration(address airlineAddress, address msgSender, uint256 updatedNumVotes) external returns(bool);
+    function voteForAirlineRegistration(address airlineAddress, uint256 updatedNumVotes) external;
 
     function registerQueuedAirline(address airlineAddress) external returns(bool);
 

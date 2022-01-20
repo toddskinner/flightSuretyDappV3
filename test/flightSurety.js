@@ -99,35 +99,206 @@ contract('Flight Surety Tests', async (accounts) => {
   it('only existing airline may register a new airline until there are at least four airlines registered', async () => {
     
     // ARRANGE
-    // let newAirline1 = accounts[1];
-    
-    
     
     // ACT
     try {
         await config.flightSuretyData.fund({from: accounts[0], value: web3.utils.toWei('10', "ether")});
-        // await config.flightSuretyApp.registerAirline(config.secondAirline, {from: config.owner});
-        // await config.flightSuretyApp.registerAirline(config.thirdAirline, {from: config.owner});
+        
+        await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
+        await config.flightSuretyApp.registerAirline(accounts[2], "newairline3", {from: accounts[0]});
 
-        // await config.flightSuretyData.fund({from: config.firstAirline, value: web3.utils.toWei('10', "ether")});
-        // await config.flightSuretyData.fund({from: config.secondAirline, value: web3.utils.toWei('10', "ether")});
-        // await config.flightSuretyData.fund({from: config.thirdAirline, value: web3.utils.toWei('10', "ether")});
+        // await config.flightSuretyData.authorizeCaller(accounts[1], {from: accounts[0]});
+        // await config.flightSuretyData.authorizeCaller(accounts[2], {from: accounts[0]});
 
-        // await config.flightSuretyApp.registerAirline(config.fourthAirline, {from: config.firstAirline});
+        await config.flightSuretyData.fund({from: accounts[1], value: web3.utils.toWei('10', "ether")});
+        await config.flightSuretyData.fund({from: accounts[2], value: web3.utils.toWei('10', "ether")});
+
+        await config.flightSuretyApp.registerAirline(accounts[3], "newairline4", {from: accounts[1]});
     } catch(e) {
         console.log(e);
     }
 
-    try {
-      await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
-      // await config.flightSuretyData.registerAirline(accounts[1], "airlineName", true, {from: accounts[0]});
-    } catch(e) {
-      console.log(e);
-    }
-    let result = await config.flightSuretyData.isRegistered.call(accounts[1]); 
+    let result = await config.flightSuretyData.isRegistered.call(accounts[3]); 
 
     // ASSERT
     assert.equal(result, true, "Existing airline should be able to register a new airline until there are at least four airlines registered");
   });
   
+  it('fifth airline cannot be registered b/c multi-party consensus of 50% not met', async () => {
+    
+    // ARRANGE
+    await config.flightSuretyData.clearRegisteredAirline(accounts[1]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[2]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[3]);
+    
+    // ACT
+    try {
+        // await config.flightSuretyData.fund({from: accounts[0], value: web3.utils.toWei('10', "ether")});
+        
+        await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
+        await config.flightSuretyApp.registerAirline(accounts[2], "newairline3", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[3], "newairline4", {from: accounts[0]});
+
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[4], 1, {from: accounts[0]});
+
+        await config.flightSuretyApp.registerAirline(accounts[4], "newairline5", {from: accounts[0]});
+    } catch(e) {
+        console.log(e);
+    }
+
+    let result = await config.flightSuretyData.isRegistered.call(accounts[4]); 
+
+    // ASSERT
+    assert.equal(result, false, "Should not be able to register a fifth airline without multi-party consensus");
+  });
+
+  it('can register fifth and subsequent airlines when multi-party consensus of 50% reached prior to the request to register', async () => {
+    
+    // ARRANGE
+    await config.flightSuretyData.clearRegisteredAirline(accounts[1]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[2]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[3]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[4]);
+
+    // ACT
+    try {
+        // await config.flightSuretyData.fund({from: accounts[0], value: web3.utils.toWei('10', "ether")});
+        
+        await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
+        await config.flightSuretyApp.registerAirline(accounts[2], "newairline3", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[3], "newairline4", {from: accounts[0]});
+
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[4], 1, {from: accounts[0]});
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[4], 2, {from: accounts[0]});
+
+        await config.flightSuretyApp.registerAirline(accounts[4], "newairline5", {from: accounts[0]});
+    } catch(e) {
+        console.log(e);
+    }
+
+    let result = await config.flightSuretyData.isRegistered.call(accounts[4]); 
+
+    // ASSERT
+    assert.equal(result, true, "Should be able to register a fifth airline when multi-party consensus is reached prior to the request to register");
+  });
+  
+  it('can register seventh (and subsequent) airlines when multi-party consensus of 50% reached after the request to register', async () => {
+    
+    // ARRANGE
+    await config.flightSuretyData.clearRegisteredAirline(accounts[1]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[2]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[3]);
+    await config.flightSuretyData.clearRegisteredAirline(accounts[4]);
+
+    // ACT
+    try {
+        // await config.flightSuretyData.fund({from: accounts[0], value: web3.utils.toWei('10', "ether")});
+        
+        await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
+        await config.flightSuretyApp.registerAirline(accounts[2], "newairline3", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[3], "newairline4", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[4], "newairline5", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[5], "newairline6", {from: accounts[0]});
+        await config.flightSuretyApp.registerAirline(accounts[6], "newairline7", {from: accounts[0]});
+
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[6], 1, {from: accounts[0]});
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[6], 2, {from: accounts[0]});
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[6], 3, {from: accounts[0]});
+        await config.flightSuretyApp.voteForAirlineRegistration(accounts[6], 4, {from: accounts[0]});
+    } catch(e) {
+        console.log(e);
+    }
+
+    let result = await config.flightSuretyData.isRegistered.call(accounts[6]); 
+
+    // ASSERT
+    assert.equal(result, true, "Should be able to register a seventh airline when multi-party consensus is reached after the request to register");
+  });
+
+  it('airline is registered, but cannot participate in contract since it has not yet submitted funding', async () => {
+    
+    // ARRANGE
+    let flightTimestamp = Math.floor(Date.now() / 1000); 
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[1]);
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[2]);
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[3]);
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[4]);
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[5]);
+    // await config.flightSuretyData.clearRegisteredAirline(accounts[6]);
+
+    // ACT
+    try {
+        // await config.flightSuretyData.fund({from: accounts[0], value: web3.utils.toWei('10', "ether")});
+        // await config.flightSuretyApp.registerAirline(accounts[1], "newairline2", {from: accounts[0]});    // initial airline (contract owner) is the first registered airline
+        // await config.flightSuretyApp.registerAirline(accounts[2], "newairline3", {from: accounts[0]});
+        // await config.flightSuretyData.fund({from: accounts[2], value: web3.utils.toWei('10', "ether")});
+
+        await config.flightSuretyApp.registerFlight('BX675', flightTimestamp, {from: accounts[6]});    
+    } catch(e) {
+        console.log(e);
+    }
+
+    let result = await config.flightSuretyData.getFlightRegistrationStatus.call(accounts[6], 'BX 675', 1642658304); 
+
+    // ASSERT
+    assert.equal(result, false, "Should not be able to register a flight (participate in contract) if not funded");
+  });
+
+  it('airline 6 is queued', async () => {
+    
+    // ARRANGE
+  
+    // ACT
+
+    let result = await config.flightSuretyData.isQueued.call(accounts[6]); 
+
+    // ASSERT
+    assert.equal(result, true, "Account[6] should be queued");
+  });
+
+  it('airline 6 is registered', async () => {
+    
+    // ARRANGE
+  
+    // ACT
+
+    let result = await config.flightSuretyData.isRegistered.call(accounts[6]); 
+
+    // ASSERT
+    assert.equal(result, true, "Account[6] should be registered");
+  });
+
+  it('airline 6 is funded', async () => {
+    
+    // ARRANGE
+  
+    // ACT
+    try {
+        await config.flightSuretyData.fund({from: accounts[6], value: web3.utils.toWei('10', "ether")});
+    } catch(e) {
+        console.log(e);
+    }
+    let result = await config.flightSuretyData.isFunded.call(accounts[6]); 
+
+    // ASSERT
+    assert.equal(result, true, "Account[6] should be funded");
+  });
+
+  it('airline is registered and funded so can participate in contract (register flight) since it has submitted funding of 10 ether', async () => {
+    
+    // ARRANGE
+    // account[6] funded in the above
+    let flightTimestamp = Math.floor(Date.now() / 1000); 
+
+    try {
+        await config.flightSuretyApp.registerFlight('BX675', flightTimestamp, {from: accounts[6]});    
+    } catch(e) {
+        console.log(e);
+    }
+    let result = await config.flightSuretyData.getFlightRegistrationStatus.call(accounts[6], 'BX675', flightTimestamp); 
+
+    // ASSERT
+    assert.equal(result, true, "Should be able to register a flight (participate in contract) since submitted funding of 10 ether");
+  });
+
 });

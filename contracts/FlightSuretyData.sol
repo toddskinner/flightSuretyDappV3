@@ -13,6 +13,7 @@ contract FlightSuretyData {
     uint256 private contractFunds = 0; 
     uint256 private creditedPayoutFunds = 0; 
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
+    bytes32[] private contractsArray;
 
     mapping(address => uint256) private authorizedContracts;
 
@@ -88,7 +89,7 @@ contract FlightSuretyData {
 
         airlines[msg.sender].airlineAddress = msg.sender;
         airlines[msg.sender].airlineName = "Initial Air";    
-        airlines[msg.sender].isQueued = false;
+        airlines[msg.sender].isQueued = true;
         airlines[msg.sender].isRegistered = true;
         airlines[msg.sender].isFunded = false;
         airlines[msg.sender].fundingAmount = 0;
@@ -133,6 +134,8 @@ contract FlightSuretyData {
         _;
     }
 
+    
+
     modifier requireFlightIsNotRegistered(bytes32 flightKey)
     {
         require(flights[flightKey].isRegistered == false, "Flight is already registered");
@@ -150,6 +153,12 @@ contract FlightSuretyData {
         require((contractFunds - (flights[getFlightKey(airline, flight, timestamp)].potentialLiability) >= 0), "Not enough funds to cover payout");
         _;
     }
+
+    // modifier requireIsQueued()
+    // {
+    //     require(airlines[msg.sender].isQueued == true, "Airline is not already queued");
+    //     _;
+    // }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
@@ -174,6 +183,14 @@ contract FlightSuretyData {
                             returns(bool) 
     {
         return airlines[airlineAddress].isRegistered;
+    }
+
+    function isQueued(address airlineAddress) 
+                            public 
+                            view 
+                            returns(bool) 
+    {
+        return airlines[airlineAddress].isQueued;
     }
 
     function isFunded(address airlineAddress) 
@@ -218,11 +235,13 @@ contract FlightSuretyData {
         }
     }
 
-    function getFlightRegistrationStatus(bytes32 flightKey) 
+    function getFlightRegistrationStatus(address airline, string memory flight, uint256 timestamp) 
                             public 
                             view 
                             returns(bool) {
-        return (flights[flightKey].isRegistered);
+        // bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+
+        return (flights[getFlightKey(airline, flight, timestamp)].isRegistered);
     }
 
     function getInsurancePurchaseStatus(bytes32 insuranceContractKey) 
@@ -300,8 +319,7 @@ contract FlightSuretyData {
                             )
                             external
                             requireIsOperational
-                            isCallerAuthorized
-                            returns (bool)
+                            // isCallerAuthorized
     {
 
         require(!airlines[airlineAddress].isRegistered, "Airline is already registered.");
@@ -328,21 +346,32 @@ contract FlightSuretyData {
     */  
     function registerFlight
                                 (
-                                    address airline,
-                                    string flightNumber,
+                                    address airlineAddress,
+                                    string flightNum,
                                     uint256 departureTime
                                 )
                                 requireIsOperational
                                 external
     {
-        bytes32 flightKey = getFlightKey(airline, flightNumber, departureTime);
+        bytes32 flightKey = getFlightKey(airlineAddress, flightNum, departureTime);
 
-        flights[flightKey].flightNumber = flightNumber;
+        // flights[getFlightKey(airlineAddress, flightNum, departureTime)] = Flight({
+        //                                         flightNumber: flightNum,
+        //                                         isRegistered: true, 
+        //                                         statusCode: STATUS_CODE_UNKNOWN,
+        //                                         timeStamp: departureTime,
+        //                                         writtenInsuranceContracts: contractsArray,
+        //                                         numInsuranceContracts: 0,
+        //                                         airline: airlineAddress,
+        //                                         potentialLiability: 0
+        //                                 });
+
+        flights[flightKey].flightNumber = flightNum;
         flights[flightKey].isRegistered = true;
         flights[flightKey].statusCode = STATUS_CODE_UNKNOWN;
         flights[flightKey].timeStamp = departureTime;
         flights[flightKey].numInsuranceContracts = 0;
-        flights[flightKey].airline = airline;
+        flights[flightKey].airline = airlineAddress;
         flights[flightKey].potentialLiability = 0;
     }
 
@@ -461,12 +490,11 @@ contract FlightSuretyData {
                             public
                             payable
                             requireIsOperational
-                            isCallerAuthorized
+                            // isCallerAuthorized
                             requirePositiveValue
+                            // requireIsQueued
                             returns(bool)
-    {
-        require(isRegistered(msg.sender),"Airline needs to be registered prior to funding");
-        
+    {   
         uint256 currentFunds = airlines[msg.sender].fundingAmount;
         uint256 newFundingAmount = currentFunds.add(msg.value);
         airlines[msg.sender].fundingAmount = newFundingAmount;
@@ -492,6 +520,19 @@ contract FlightSuretyData {
                         returns(bytes32) 
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
+
+    function getFlightKeyForTesting
+                        (
+                            address airline,
+                            string flight,
+                            uint256 timestamp
+                        )
+                        pure
+                        external
+                        returns(bytes32) 
+    {
+        return getFlightKey(airline, flight, timestamp);
     }
 
     function processFlightStatus
@@ -538,14 +579,12 @@ contract FlightSuretyData {
         return true;
     }
 
-    function voteForAirlineRegistration(address airlineAddress, address msgSender, uint256 updatedNumVotes) 
+    function voteForAirlineRegistration(address airlineAddress, uint256 updatedNumVotes) 
                             external
                             requireIsOperational
-                            returns(bool)
     {
-        airlines[airlineAddress].voters[msgSender] = true;
+        airlines[airlineAddress].voters[msg.sender] = true;
         airlines[airlineAddress].numVotes = updatedNumVotes;
-        return true;
     }
 
     function getInsuranceContractKey
@@ -561,5 +600,26 @@ contract FlightSuretyData {
     {
         return keccak256(abi.encodePacked(airline, flight, timestamp, passenger));
     }
+
+    function clearRegisteredAirline
+                        (     
+                            address airline                     
+                        )
+                        external
+    {
+        airlines[airline] = Airline({
+                                                airlineAddress: 0,
+                                                airlineName: '', 
+                                                isQueued: false,
+                                                isRegistered: false,
+                                                isFunded: false,
+                                                fundingAmount: 0,
+                                                numVotes: 0
+                                        });
+
+        if(numRegisteredAirlines != 1){
+            numRegisteredAirlines == 1;
+        }
+    } 
 }
 

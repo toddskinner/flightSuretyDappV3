@@ -300,6 +300,53 @@ contract FlightSuretyApp {
             
     }
 
+    function fundAirlineAndRegisterInitialFlights
+                                (
+                                    string flight1,
+                                    uint256 timestamp1,    // departure time
+                                    string flight2,
+                                    uint256 timestamp2,  
+                                    string flight3,
+                                    uint256 timestamp3 
+                                )
+                                public
+                                payable
+    {
+        bytes32 flightKey1 = getFlightKey(msg.sender, flight1, timestamp1);
+        bytes32 flightKey2 = getFlightKey(msg.sender, flight2, timestamp2);
+        bytes32 flightKey3 = getFlightKey(msg.sender, flight3, timestamp3);
+
+        flightSuretyData.fundInitialAirline(msg.sender, msg.value);
+        flightSuretyData.registerFlight(msg.sender, flight1, timestamp1, flightKey1);
+        flightSuretyData.registerFlight(msg.sender, flight2, timestamp2, flightKey2);
+        flightSuretyData.registerFlight(msg.sender, flight3, timestamp3, flightKey3);       
+    }
+
+    function fund
+                            (  
+                            )
+                            public
+                            payable
+                            requireIsOperational
+                            // isCallerAuthorized
+                            requirePositiveValue
+                            // requireIsQueued
+                            returns(bool)
+    {   
+        flightSuretyData.fund();
+    }
+
+    function withdrawPayouts
+                            (  
+                            )
+                            public
+                            payable
+                            requireIsOperational
+                            returns(bool)
+    {   
+        flightSuretyData.pay(msg.sender);
+    }
+
     /**
     * @dev Buy insurance for a flight
     *
@@ -553,7 +600,7 @@ contract FlightSuretyData {
 
     function registerQueuedAirline(address airlineAddress) external returns(bool);
 
-    // function fund() public payable returns(bool);
+    function fund() public payable returns(bool);
 
     function getFlightRegistrationStatus(bytes32 flightKey) public view returns(bool);
    
@@ -561,9 +608,13 @@ contract FlightSuretyData {
 
     function processFlightStatus(address airline, string flightNumber, uint256 timestamp, uint8 updatedStatusCode) external;
 
-    function buy(address airline, string flightNumber, uint256 timestamp, address passenger, uint256 insuranceAmount, uint256 payoutAmount) external payable;
+    function buy(address airline, string flightNumber, uint256 timestamp, address passenger, uint256 insuranceAmount, uint256 payoutAmount) external payable returns(uint256);
  
     function getInsurancePurchaseStatus(bytes32 insuranceContractKey) public view returns(bool); 
 
     function creditInsurees(address airline, string flight, uint256 timestamp) external;
+
+    function pay(address passengerAddress) external payable;
+
+    function fundInitialAirline(address airlineAddress, uint256 initialFunding) public payable returns(bool);
 }

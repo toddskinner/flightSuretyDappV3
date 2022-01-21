@@ -34,9 +34,28 @@ section {
 }
 
 label.form {
-    font-size: 14px;
+    font-size: 20px;
     margin-right: 20px;
+    margin-top: 10px;
 }
 input {
     margin-right: 30px;
 }
+
+#register-flights {
+    float: right;
+}
+
+#buy-insurance {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+#submit-oracle {
+    margin-right: 20px;
+}
+
+#withdraw-payouts {
+    margin-right: 20px;
+}
+

@@ -10,22 +10,37 @@
 </head>
 
 <body>
-
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-        <a class="navbar-brand" href="#">FlightSurety</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault"
-            aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <a class="navbar-brand" href="#">FlightSurety</a> 
+        <ul class="nav navbar-nav ml-auto"><btn class="btn btn-primary" id="register-flights">Register Initial Flights</btn></ul>
     </nav>
 
     <main class="container">
-
+        
         <div id="display-wrapper" class="top-20">
         </div>
-        <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+            <div class="row top-20">
+                <label class="form">Flight List </label>
+      
+                <select id="flightlist">
+                  <option value="BA234">BA 234: Jan 5th at 8:30 AM</option>
+                  <option value="BA475">BA 475: Jan 6th at 9:30 AM</option>
+                  <option value="BA9876">BA 9876: Jan 7th at 10:30 AM</option>
+                </select>
+                <btn class="btn btn-primary" id="buy-insurance">Buy Flight Insurance</btn>
+                <btn class="btn btn-primary" id="submit-oracle">Check Flight Status</btn>
+                <btn class="btn btn-primary" id="withdraw-payouts">Withdraw Payouts</btn>
+            </div>
+        
+        <hr>
+        
+        <!-- <div id="display-wrapper" class="top-20">
         </div>
+        <div class="row top-20">
+            <label class="form">Flight</label> 
+            <input type="text" id="flight-number"> 
+            <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+        </div> -->
     </main>
 
 </body>

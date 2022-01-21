@@ -86,6 +86,7 @@ contract FlightSuretyData {
     {
         contractOwner = msg.sender;
         authorizedContracts[msg.sender] = 1;
+        operational = true;
 
         airlines[msg.sender].airlineAddress = msg.sender;
         airlines[msg.sender].airlineName = "Initial Air";    
@@ -96,6 +97,8 @@ contract FlightSuretyData {
         airlines[msg.sender].numVotes = 0;
 
         numRegisteredAirlines = 1;
+        
+        // this.setOperatingStatus(true);
     }
 
     /********************************************************************************************/
@@ -392,6 +395,7 @@ contract FlightSuretyData {
                             )
                             external
                             payable
+                            returns(uint256)
     {
         bytes32 insuranceContractKey = getInsuranceContractKey(airline, flightNumber, timeStamp, passenger);    // msg.sender is passenger
         bytes32 flightKey = getFlightKey(airline, flightNumber, timeStamp);
@@ -417,6 +421,7 @@ contract FlightSuretyData {
 
         contractFunds = contractFunds + msg.value;
         contractOwner.transfer(msg.value);
+        return updatedNumContracts;
     }
 
  
@@ -509,6 +514,33 @@ contract FlightSuretyData {
         }
         contractFunds = contractFunds + msg.value;
         contractOwner.transfer(msg.value);
+    }
+
+    function fundInitialAirline
+                            (  
+                                address airlineAddress,
+                                uint256 initialFunding
+                            )
+                            public
+                            payable
+                            requireIsOperational
+                            // isCallerAuthorized
+                            requirePositiveValue
+                            // requireIsQueued
+                            returns(bool)
+    {   
+        uint256 currentFunds = airlines[airlineAddress].fundingAmount;
+        uint256 newFundingAmount = currentFunds.add(initialFunding);
+        airlines[airlineAddress].fundingAmount = newFundingAmount;
+
+        if(newFundingAmount >= 10 ether){
+            airlines[airlineAddress].isFunded = true;
+            return true;
+        } else {
+            return false;
+        }
+        contractFunds = contractFunds + initialFunding;
+        contractOwner.transfer(initialFunding);
     }
 
     function getFlightKey
